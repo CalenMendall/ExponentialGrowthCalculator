@@ -77,6 +77,7 @@ ui = dashboardPage(
       choices = c('Loans', 'Investment'),
       selected = 'Loans')
   ),
+  
   dashboardBody(fluidPage(
   # Some information about the functionality of the calculator
   card("Information: Plots the change in cumulative balance over time under 
@@ -84,14 +85,14 @@ ui = dashboardPage(
        monthly basis which may be conservative if capitalization is more frequent.
        Interest is assumed to be added to the principal at the end of the month
        as are contributions. Contributions are assumed to be equally distributed
-       across each individual line item"),
+       across each individual line item."),
   
   # Some instructions
-  card("Instructions for use:\n
-    1. Upload a .csv file with your loan/investment information:
-    2. Select the amount you plan to contribute monthly.
-    3. Select the magnitude of the adjustment to monthly contributions
-    3. Select the number of adjustments you would like to display."),
+  card(HTML("Instructions for use: <br>
+    1. Upload a .csv file with your loan/investment information: <br>
+    2. Select the amount you plan to contribute monthly. <br>
+    3. Select the magnitude of the adjustment to monthly contributions <br>
+    4. Select the number of adjustments you would like to display. <br>")),
   
   # The preamble to the file upload
   "File must contain a row for each loan/investment with different interest 
@@ -103,7 +104,43 @@ ui = dashboardPage(
   fileInput("file", "Select a CSV"),
   
   # Set to include the plot 
-  plotOutput(outputId = "Plot", )
+  plotOutput(outputId = "Plot" ),
+  
+  "Find the change in value of a dollar for a given interest rate and time period.",
+  
+  div(style = "width: 100%; height: 1vh"),
+  
+  tags$div(
+  numericInput(
+    inputId = 'Rate', 
+    label = "Enter the annual interest rate as percent", 
+    value = 0, 
+    min = 0, max = 100), style="display:inline-block" ), 
+  
+  tags$div(
+    numericInput(
+      inputId = 'Time', 
+      label = "Enter the length of time in years", 
+      value = 0, 
+      min = 0, 
+      max = 60), style="display:inline-block"
+  ),
+  
+  # Return the expected value of the dollar 
+  textOutput(outputId = 'ExpectedValue'),
+  
+  # Little bit of info about the value of paying early
+  "Why does this matter? Paying an extra dollar on the principal of a loan will 
+  decrease the total amount paid in interest over the life of the loan. 
+  For example, at a 10% interest rate over 10 years, $1 in principal will grow 
+  to $2.59. So by paying $1 at year 0, you will save $1.59 over paying it at the
+  end. This scales as well; $100 at 10% for 10 years will grow to $259. By 
+  paying $100 extra on the principal early in the life of the loan, you save 
+  yourself $159. In contrast, paying an extra dollar with only a year left on 
+  the 10 year loan will only save you 10 cents.",
+  
+  # Add some spacing at the bottom
+  div(style = "width: 100%; height: 10vh")
   )))
 
 #### Server generation ####
@@ -182,6 +219,12 @@ server = function(input, output) {
           title = "Monthly payment ($)")
     abline(h = 0)
   })
+  
+  output$ExpectedValue = renderText({
+    ev = round(((1+input$Rate/100)**input$Time), 4)
+    paste('The expected value of a dollar at an interest of', input$Rate, '% for a total of', input$Time, 'years is: $', ev)
+  })
+  
 }
 
 #### Launch the App ####
